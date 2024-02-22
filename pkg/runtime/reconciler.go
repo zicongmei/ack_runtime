@@ -41,6 +41,7 @@ import (
 	ackrtcache "github.com/aws-controllers-k8s/runtime/pkg/runtime/cache"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	"github.com/aws/aws-sdk-go/aws/arn"
 )
 
 const (
@@ -177,6 +178,11 @@ func (r *resourceReconciler) Reconcile(ctx context.Context, req ctrlrt.Request) 
 			// r.getRoleARN errors are not terminal, we should requeue.
 			return ctrlrt.Result{}, requeue.NeededAfter(err, roleARNNotAvailableRequeueDelay)
 		}
+		parsedARN, err := arn.Parse(string(roleARN))
+		if err != nil {
+			return ctrlrt.Result{}, requeue.NeededAfter(err, roleARNNotAvailableRequeueDelay)
+		}
+		acctID = ackv1alpha1.AWSAccountID(parsedARN.AccountID)
 	}
 	region := r.getRegion(desired)
 
